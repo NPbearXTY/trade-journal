@@ -96,8 +96,10 @@ export const ibkrFlex = makeFillsFormat({
     side: ["buysell"],
     quantity: ["quantity"],
     price: ["price", "tradeprice"],
-    fees: [["commission", "ibcommission"]],
+    fees: [["commission", "ibcommission"], ["taxes"]],
+    feeMultipliers: [-1, -1],
     timestamp: ["datetime"],
+    executionId: ["ibexecid", "executionid"],
   },
 });
 

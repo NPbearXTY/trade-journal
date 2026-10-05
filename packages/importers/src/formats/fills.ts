@@ -11,6 +11,7 @@ export interface FillsColumnMap {
   price: string[];
   /** Each alias group is summed (commission + fees, etc.). */
   fees?: string[][];
+  feeMultipliers?: number[];
   timestamp?: string[];
   date?: string[];
   time?: string[];
@@ -122,7 +123,14 @@ export const rowsToFills = (
     }
 
     const fee = (columns.fees ?? [])
-      .map((aliases) => Math.abs(parseMoney(pick(row, aliases))))
+      .map((aliases, index) => {
+        const amount = parseMoney(pick(row, aliases));
+        const multiplier = columns.feeMultipliers?.[index];
+
+        return multiplier === undefined
+          ? Math.abs(amount)
+          : amount * multiplier;
+      })
       .filter((value) => Number.isFinite(value))
       .reduce((total, value) => total + value, 0);
 
@@ -171,6 +179,22 @@ export const rowsToFills = (
       };
       const source = pick(row, ["account", "accountid", "accountname", "clientaccountid"]);
       if (source) sourceAccounts.add(source);
+    } 
+
+      if (!position && columns.executionId) {
+      const executionId = pick(row, columns.executionId)?.trim();
+
+      if (!executionId || executionId.length > 500) {
+        errors.push(`${symbol}: a valid execution ID is required.`);
+        skippedRows++;
+        continue;
+      }
+
+      fill.importMetadata = {
+        id: `execution:${executionId}`,
+        order: 0,
+        preserveFee: true,
+      };
     }
     executions.push(fill);
   }
